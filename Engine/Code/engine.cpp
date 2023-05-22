@@ -1023,9 +1023,24 @@ void processInput(App* app)
         app->camera->ProcessKeyboard(LLEFT, app->deltaTime);
     }
     if (app->input.mouseButtons[LEFT] == BUTTON_PRESSED) {
-        app->camera->ProcessMouseMovement(app->input.mouseDelta.x, app->input.mouseDelta.y);
+        app->camera->ProcessMouseMovement(app->input.mouseDelta.x, -app->input.mouseDelta.y);
     }
 
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        vec3 reference = { 0,0,0 };
+
+        vec3 dir = app->camera->Position - reference;
+
+        dir = rotateVector(app->camera->Up, AI_DEG_TO_RAD(app->input.mouseDelta.x * 10), dir);
+        dir = rotateVector(app->camera->Right, AI_DEG_TO_RAD(app->input.mouseDelta.y * 10), dir);
+
+        app->camera->Position = dir + reference;
+
+        vec3 direction = reference - app->camera->Position;
+
+        app->camera->Front = direction;
+    }
 }
 void Update(App* app)
 {

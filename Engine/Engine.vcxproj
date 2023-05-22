@@ -48,6 +48,8 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Apuntes_Uni\.gitattributes" />
+    <None Include="..\..\Apuntes_Uni\.gitignore" />
     <None Include="WorkingDir\DebugOBJ.glsl" />
     <None Include="WorkingDir\EmptyObj.glsl" />
     <None Include="WorkingDir\quad.glsl" />

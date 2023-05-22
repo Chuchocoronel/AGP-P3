@@ -109,5 +109,7 @@
     <None Include="WorkingDir\DebugOBJ.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\..\Apuntes_Uni\.gitignore" />
+    <None Include="..\..\Apuntes_Uni\.gitattributes" />
   </ItemGroup>
 </Project>
