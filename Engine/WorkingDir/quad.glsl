@@ -11,12 +11,6 @@ layout (location = 1) in vec2 aTexCoords;
 out vec2 vTexCoord;
 
 
-
-
-
-
-
-
 void main()
 {
     vTexCoord = aTexCoords;
@@ -34,6 +28,15 @@ uniform int FinalRenderID;
 
 vec4 fin;
 
+
+// parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
+int kernelSize = 64;
+float radius = 0.1;
+float bias = 0.025;
+
+// tile noise texture over screen based on screen dimensions divided by noise size
+const vec2 noiseScale = vec2(800.0/4.0, 600.0/4.0); 
+
 struct Light
 {
     int type;
@@ -46,10 +49,67 @@ struct Light
 layout(binding = 0, std140) uniform GlobalParams
 {
     vec3 uCameraPosition;
+    mat4 projectionMat;
+    mat4 projectionMatInv;
     int uLightCount;
     Light uLight[20];
 };
+layout(binding = 1, std140) uniform GlobalParamss
+{
+    float left;
+    float right;
+    float bottom;
+    float top;
+    float znear;
+    float zfar;
+    vec3 samples[64];
 
+};
+vec3 ReconstructPixelPosition(float depth,mat4 projectionMatrixInv,vec2 v)
+{
+    float xndc =gl_FragCoord.x / v.x * 2.0 - 1.0;
+    float yndc =gl_FragCoord.y / v.y * 2.0 - 1.0;
+    float zndc =depth * 2.0 - 1.0;
+    vec4 posNDC=vec4(xndc,yndc,zndc,1.0);
+    vec4 posView=projectionMatrixInv * posNDC;
+    return posView.xyz / posView.w;
+}
+vec3 Reco(float depth,float l,float r,float b,float t,float n,float f,vec2 v)
+{
+    float zndc =depth * 2.0 - 1.0;
+    float zeye = 2.0*f*n / (zndc*(f-n)-(f+n));
+    float xndc = gl_FragCoord.x/v.x * 2.0 - 1.0;
+    float yndc = gl_FragCoord.y/v.y * 2.0 - 1.0;
+    float xeye = -zeye*(xndc*(r-l)+(r+l))/(2.0*n);
+    float yeye = -zeye*(yndc*(t-b)+(t+b))/(2.0*n);
+    vec3 eyecoords = vec3(xeye,yeye,zeye);
+    return eyecoords;
+}
+vec4 ambient(vec3 FFragPos,vec3 FNormal)
+{
+     vec3 tangent = cross(FNormal,vec3(0,1,0));
+     vec3 bitangent = cross(FNormal,tangent);
+     mat3 TBN= mat3(tangent,bitangent,FNormal);
+     float occlusion=0.0;
+     for(int i = 0; i < 64; ++i)
+     {
+        vec3 offsetView=TBN * samples[i];
+        vec3 samplePosView = FFragPos + (offsetView * radius);
+
+        vec4 sampleTexCoord= projectionMat*vec4(samplePosView,1.0);
+        sampleTexCoord.xyz /=sampleTexCoord.w;
+        sampleTexCoord.xyz =sampleTexCoord.xyz * 0.5 + 0.5;
+       
+        float sampledDepth=  texture(gDepth, sampleTexCoord.xy).r;
+        vec2 g=vec2(800,600);
+        vec3 sampledPosView=ReconstructPixelPosition(sampledDepth,projectionMatInv,g);
+        //vec3 sampledPosView= Reco(sampledDepth,left,right,bottom,top,znear,zfar,g);
+        occlusion +=(samplePosView.z<sampledPosView.z-0.02 ? 1.0 :0.0);
+     }
+     return vec4(1.0-occlusion/64.0);
+
+
+}
 vec4 LightRender(vec3 FFragPos,vec3 FNormal,vec3 FDiffuse,float FSpecular)
 {
     vec3 lighting  = FDiffuse * 0.1; // hard-coded ambient component
@@ -102,9 +162,10 @@ vec4 LightRender(vec3 FFragPos,vec3 FNormal,vec3 FDiffuse,float FSpecular)
          specular *= attenuation;
          lighting += diffuse + specular;        
      }
+    
+    
      return vec4(lighting,1.0);
-
-
+     
 }
 
 void main(){
@@ -140,17 +201,12 @@ void main(){
         {
             fin =vec4(Diffuse,1.0);
         }
-        
+        fin=ambient(FragPos,Normal);
         
     }
+
     oColor = fin;
 }
 
 #endif
 #endif
-
-
-// NOTE: You can write several shaders in the same file if you want as
-// long as you embrace them within an #ifdef block (as you can see above).
-// The third parameter of the LoadProgram function in engine.cpp allows
-// chosing the shader you want to load by name.

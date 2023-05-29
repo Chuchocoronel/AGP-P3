@@ -14,6 +14,7 @@
 #include"Camera.h"
 #include <vector>
 #include <string>
+#include <random>
 #define BINDING(b) b
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -184,6 +185,9 @@ public:
 };
 struct App
 {
+
+    std::vector<glm::vec3> ssaoKernel;
+
     //mesh
     int PatrickID;
     int PlaneID;
@@ -196,7 +200,10 @@ struct App
     std::vector<Objects*> sceneObjects;
     int globalParamsOffset;
     int globalParamsSize;
+    int globalParamsOffsetSecond;
+    int globalParamsSizeSecond;
     Buffer cbuffer;
+    Buffer cbufferSecond;
     int selectedFrameBuffer = 4;
     const char* current_item="Final Render";
     const char* items[5] = { "Albedo", "Normal", "Position","Depth","Final Render"};

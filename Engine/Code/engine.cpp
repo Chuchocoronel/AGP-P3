@@ -663,18 +663,47 @@ void DestroyLight(App* app,Light* position) {
     delete position;
     
 }
+float lerp(float a, float b, float f)
+{
+    return (a * (1.0 - f)) + (b * f);
+}
+void initRandomFloats(App* app)
+{
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    
+    for (unsigned int i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator)
+        );
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = (float)i / 64.0;
+      
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+
+        app->ssaoKernel.push_back(sample);
+    }
+
+
+}
 void Init(App* app)
 {
     GLint maxUniformBufferSize;
 
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
     app->cbuffer = CreateBuffer(maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_DYNAMIC_DRAW);
-
+    app->cbufferSecond = CreateBuffer(maxUniformBufferSize, GL_UNIFORM_BUFFER, GL_DYNAMIC_DRAW);
     
 
 
     initFrontPlane(app);
     initGBuffer(app);
+    initRandomFloats(app);
     app->camera= new Camera({-1.7,1.6f,16},{0,1,0});
     
     
@@ -1045,11 +1074,18 @@ void processInput(App* app)
 void Update(App* app)
 {
     processInput(app);
+   
+
+
 
     MapBuffer(app->cbuffer, GL_WRITE_ONLY);
-    app->globalParamsOffset = app->cbuffer.head;
-    PushVec3(app->cbuffer, app->camera->Position);
+    app->globalParamsOffsetSecond = app->cbufferSecond.head;
 
+    
+    PushVec3(app->cbuffer, app->camera->Position);
+    glm::mat4 matrix = glm::inverse(app->camera->projection);
+    PushMat4(app->cbuffer, app->camera->projection);
+    PushMat4(app->cbuffer, matrix);
     PushUInt(app->cbuffer, app->lights.size());
     for (u32 i = 0; i < app->lights.size(); i++) {
         AlignHead(app->cbuffer, sizeof(vec4));
@@ -1061,9 +1097,29 @@ void Update(App* app)
         PushUFloat(app->cbuffer, light->intensity);
         PushUFloat(app->cbuffer, light->angle);
     }
+    
     app->globalParamsSize = app->cbuffer.head - app->globalParamsOffset;
     UnmapBuffer(app->cbuffer);
-    // You can handle app->input keyboard/mouse here
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    MapBuffer(app->cbufferSecond, GL_WRITE_ONLY);
+    app->globalParamsOffsetSecond = app->cbufferSecond.head;
+    
+    PushUFloat(app->cbufferSecond, -1);//left
+    PushUFloat(app->cbufferSecond, 1);//right
+    PushUFloat(app->cbufferSecond, -1);//bottom
+    PushUFloat(app->cbufferSecond, 1);//top
+
+    PushUFloat(app->cbufferSecond, app->camera->nearP);
+    PushUFloat(app->cbufferSecond, app->camera->farP);
+    for (u32 i = 0; i < app->ssaoKernel.size(); i++) {
+        AlignHead(app->cbufferSecond, sizeof(vec4));
+        PushVec3(app->cbufferSecond, app->ssaoKernel[i]);
+    }
+    app->globalParamsSizeSecond = app->cbufferSecond.head - app->globalParamsOffsetSecond;
+    UnmapBuffer(app->cbufferSecond);
+
 }
 GLuint FindVAO( Mesh mesh, int submeshIndex, Program program) {
     Submesh& submesh = mesh.submeshes[submeshIndex];
@@ -1121,8 +1177,8 @@ void Render(App* app)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glBindFramebuffer(GL_FRAMEBUFFER, app->gBuffer);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
                 glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cbuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->cbufferSecond.handle, app->globalParamsOffsetSecond, app->globalParamsSizeSecond);
     
                 glViewport(0, 0, app->displaySize.x, app->displaySize.y);
                 
