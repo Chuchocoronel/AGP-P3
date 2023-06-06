@@ -74,17 +74,7 @@ vec3 ReconstructPixelPosition(float depth,mat4 projectionMatrixInv,vec2 v)
     vec4 posView=projectionMatrixInv * posNDC;
     return posView.xyz / posView.w;
 }
-vec3 Reco(float depth,float l,float r,float b,float t,float n,float f,vec2 v)
-{
-    float zndc =depth * 2.0 - 1.0;
-    float zeye = 2.0*f*n / (zndc*(f-n)-(f+n));
-    float xndc = gl_FragCoord.x/v.x * 2.0 - 1.0;
-    float yndc = gl_FragCoord.y/v.y * 2.0 - 1.0;
-    float xeye = -zeye*(xndc*(r-l)+(r+l))/(2.0*n);
-    float yeye = -zeye*(yndc*(t-b)+(t+b))/(2.0*n);
-    vec3 eyecoords = vec3(xeye,yeye,zeye);
-    return eyecoords;
-}
+
 vec4 ambient(vec3 FFragPos,vec3 FNormal)
 {
      vec3 tangent = cross(FNormal,vec3(0,1,0));
@@ -106,7 +96,7 @@ vec4 ambient(vec3 FFragPos,vec3 FNormal)
         //vec3 sampledPosView= Reco(sampledDepth,left,right,bottom,top,znear,zfar,g);
         occlusion +=(samplePosView.z<sampledPosView.z-0.02 ? 1.0 :0.0);
      }
-     return vec4(1.0-occlusion/64.0);
+     return vec4(vec3(1.0-occlusion/64.0),1.0);
 
 
 }
@@ -193,18 +183,22 @@ void main(){
         vec3 grayscaleColor = vec3(normalizedDepth);
         fin =vec4(grayscaleColor,1.0);
     }
-    else
+    else if(FinalRenderID == 4)
     {       
+        
+        fin=ambient(FragPos,Normal);
+        
+    }else
+    {
         if(Normal.x != -1){
-            fin = LightRender(FragPos,Normal,Diffuse,Specular);
+            fin = LightRender(FragPos,Normal,Diffuse,Specular)*ambient(FragPos,Normal);
         }else
         {
             fin =vec4(Diffuse,1.0);
         }
-        fin=ambient(FragPos,Normal);
-        
-    }
 
+    }
+    
     oColor = fin;
 }
 

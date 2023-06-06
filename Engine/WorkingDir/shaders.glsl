@@ -17,11 +17,12 @@ uniform mat4 projection;
 uniform mat4 model;
 void main(){
 	vTexCoord=aTexCoord;
-	vec4 worldPos = model * vec4(aPosition, 1.0);
-	FragPos = worldPos.xyz;
-	mat3 normalMatrix = transpose(inverse(mat3(model)));
-    Normal = normalMatrix * aNormal;
-	gl_Position = projection * view *  worldPos;
+	vec4 worldPoss = view * model * vec4(aPosition, 1.0);
+	FragPos = worldPoss.xyz;
+
+	mat3 normalMatrixs = transpose(inverse(mat3(view*model)));
+    Normal = normalMatrixs * aNormal;
+	gl_Position = projection* worldPoss;
 }
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 uniform sampler2D texture_diffuse1;
@@ -39,6 +40,8 @@ void main(){
 	gNormal = normalize(Normal);
 	gAlbedoSpec.rgb = texture(texture_diffuse1, vTexCoord).rgb;
 	gAlbedoSpec.a = texture(texture_specular1, vTexCoord).r;
+
+	
 }
 
 #endif

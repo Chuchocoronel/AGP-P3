@@ -549,7 +549,26 @@ void initGBuffer(App* app) {
     unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(4, attachments);
     
-    
+    /////////////////////////////////////////////////////
+    std::vector<glm::vec3> ssaoNoise;
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    for (unsigned int i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(
+            randomFloats(generator) * 2.0 - 1.0,
+            randomFloats(generator) * 2.0 - 1.0,
+            0.0f);
+        ssaoNoise.push_back(noise);
+    }
+
+    glGenTextures(1, &app->ssao);
+    glBindTexture(GL_TEXTURE_2D, app->ssao);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     
 
 
@@ -561,6 +580,7 @@ void initGBuffer(App* app) {
     glUniform1i(glGetUniformLocation(texturedMeshPRogram.handle, "gNormal"), 1);
     glUniform1i(glGetUniformLocation(texturedMeshPRogram.handle, "gAlbedoSpec"), 2);
     glUniform1i(glGetUniformLocation(texturedMeshPRogram.handle, "gDepth"), 3);
+    glUniform1i(glGetUniformLocation(texturedMeshPRogram.handle, "texNoise"), 4);
 }
 void initFrontPlane(App* app) {
     float quadVertices[] = {
@@ -786,7 +806,7 @@ void Gui(App* app)
         ImGui::TextColored({ 1,0,0,1 }, "Final Render Texture");
         if (ImGui::BeginCombo("##custom combo", app->current_item, ImGuiComboFlags_NoArrowButton))
         {
-            for (int n = 0; n < 5; n++)
+            for (int n = 0; n < 6; n++)
             {
                 bool is_selected = (app->current_item == app->items[n]);
                 if (ImGui::Selectable(app->items[n], is_selected)) {
@@ -1268,7 +1288,8 @@ void Render(App* app)
                 glBindTexture(GL_TEXTURE_2D, app->gAlbedoSpec);
                 glActiveTexture(GL_TEXTURE3);
                 glBindTexture(GL_TEXTURE_2D, app->gDepth);
-
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, app->ssao);
                 
                 glBindVertexArray(app->VAO);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

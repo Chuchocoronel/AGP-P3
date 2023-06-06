@@ -204,11 +204,11 @@ struct App
     int globalParamsSizeSecond;
     Buffer cbuffer;
     Buffer cbufferSecond;
-    int selectedFrameBuffer = 4;
+    int selectedFrameBuffer = 5;
     const char* current_item="Final Render";
-    const char* items[5] = { "Albedo", "Normal", "Position","Depth","Final Render"};
+    const char* items[6] = { "Albedo", "Normal", "Position","Depth","ssao","Final Render"};
     unsigned int gBuffer;
-    unsigned int gPosition, gNormal, gAlbedoSpec,gDepth;
+    unsigned int gPosition, gNormal, gAlbedoSpec,gDepth, ssao;
     /// ////////////////////////////
     /// ////////////////////////////
     std::vector<Texture> textures;
