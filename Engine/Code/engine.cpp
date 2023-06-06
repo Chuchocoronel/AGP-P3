@@ -1059,16 +1059,34 @@ void processInput(App* app)
     {
         vec3 reference = { 0,0,0 };
 
-        vec3 dir = app->camera->Position - reference;
+        glm::quat pivot = glm::angleAxis(app->input.mouseDelta.x * 0.01f, app->camera->Up);
 
-        dir = rotateVector(app->camera->Up, AI_DEG_TO_RAD(app->input.mouseDelta.x * 10), dir);
-        dir = rotateVector(app->camera->Right, AI_DEG_TO_RAD(app->input.mouseDelta.y * 10), dir);
+        if (abs(app->camera->Up.y) < 0.1f)
+        {
+            if ((app->camera->Position.y > reference.y && app->input.mouseDelta.y > 0.f) ||
+                (app->camera->Position.y < reference.y && app->input.mouseDelta.y < 0.f))
+                pivot = pivot * glm::angleAxis(app->input.mouseDelta.y * 0.01f, app->camera->Right);
+        }
+        else
+        {
+            pivot = pivot * glm::angleAxis(app->input.mouseDelta.y * 0.01f, app->camera->Right);
+        }
 
-        app->camera->Position = dir + reference;
+        app->camera->Position = pivot * (app->camera->Position - reference) + reference;
+        app->camera->Front = glm::normalize(reference - app->camera->Position);
+        app->camera->Right = glm::normalize(glm::cross(app->camera->Front, app->camera->WorldUp));
+        app->camera->Up = glm::normalize(glm::cross(app->camera->Right, app->camera->Front));
 
-        vec3 direction = reference - app->camera->Position;
+        app->camera->Pitch = glm::degrees(asin(app->camera->Front.y));
+        if (app->camera->Front.z < 0.0f)
+            app->camera->Yaw = -glm::degrees(acos(app->camera->Front.x / cos(glm::radians(app->camera->Pitch))));
+        else
+            app->camera->Yaw = glm::degrees(acos(app->camera->Front.x / cos(glm::radians(app->camera->Pitch))));
 
-        app->camera->Front = direction;
+        if (app->camera->Pitch > 89.0f)
+            app->camera->Pitch = 89.0f;
+        if (app->camera->Pitch < -89.0f)
+            app->camera->Pitch = -89.0f;
     }
 }
 void Update(App* app)
