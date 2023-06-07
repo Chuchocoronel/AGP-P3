@@ -26,9 +26,11 @@ Shader used: [Deferred shading](Engine/WorkingDir/quad.glsl)
 This is a post-processing technique that calculate the points in geometry that recieve less light than the others, creating an effect of better shadows.
 
 Only rendering SSAO
+
 ![SSAO only](Screenshots/ssao.png)
 
 SSAO on final render
+
 ![SSAO final render](Screenshots/ssao_final-render.png)
 
 Shader used: [SSAO shader](Engine/WorkingDir/quad.glsl)
