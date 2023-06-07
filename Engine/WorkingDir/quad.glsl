@@ -24,6 +24,8 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 uniform sampler2D gDepth;
+uniform sampler2D ggPosition;
+uniform sampler2D ggNormal;
 uniform int FinalRenderID;
 
 vec4 fin;
@@ -162,6 +164,8 @@ void main(){
 
     vec3 FragPos = texture(gPosition, vTexCoord).rgb;
     vec3 Normal = texture(gNormal, vTexCoord).rgb;
+     vec3 FFragPos = texture(ggPosition, vTexCoord).rgb;
+    vec3 FNormal = texture(ggNormal, vTexCoord).rgb;
     vec3 Diffuse = texture(gAlbedoSpec, vTexCoord).rgb;
     float Specular = texture(gAlbedoSpec, vTexCoord).a;
     vec3 depht = texture(gDepth, vTexCoord).rgb;
@@ -186,17 +190,24 @@ void main(){
     else if(FinalRenderID == 4)
     {       
         
-        fin=ambient(FragPos,Normal);
+        fin=ambient(FFragPos,FNormal);
         
-    }else
+    }else if(FinalRenderID == 5)
     {
         if(Normal.x != -1){
-            fin = LightRender(FragPos,Normal,Diffuse,Specular)*ambient(FragPos,Normal);
+            fin = LightRender(FragPos,Normal,Diffuse,Specular);
         }else
         {
             fin =vec4(Diffuse,1.0);
         }
 
+    }else{
+        if(Normal.x != -1){
+            fin = LightRender(FragPos,Normal,Diffuse,Specular)*ambient(FFragPos,FNormal);
+        }else
+        {
+            fin =vec4(Diffuse,1.0);
+        }
     }
     
     oColor = fin;

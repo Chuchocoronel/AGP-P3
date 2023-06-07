@@ -12,16 +12,23 @@ layout(location=2) in vec2 aTexCoord;
 out vec3 FragPos;
 out vec2 vTexCoord;
 out vec3 Normal;
+out vec3 FFragPos;
+out vec3 FNormal;
+
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 model;
 void main(){
 	vTexCoord=aTexCoord;
 	vec4 worldPoss = view * model * vec4(aPosition, 1.0);
-	FragPos = worldPoss.xyz;
+	vec4 worldPos =  model * vec4(aPosition, 1.0);
+	FFragPos = worldPoss.xyz;
+	FragPos = worldPos.xyz;
 
 	mat3 normalMatrixs = transpose(inverse(mat3(view*model)));
-    Normal = normalMatrixs * aNormal;
+	mat3 normalMatrix = transpose(inverse(mat3(model)));
+	FNormal=normalMatrixs* aNormal;
+    Normal = normalMatrix * aNormal;
 	gl_Position = projection* worldPoss;
 }
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -30,17 +37,22 @@ in vec2 vTexCoord;
 
 in vec3 FragPos;
 in vec3 Normal;
+in vec3 FFragPos;
+in vec3 FNormal;
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 layout (location = 3) out vec4 gDepth;
+layout (location = 4) out vec3 ggPosition;
+layout (location = 5) out vec3 ggNormal;
 uniform int lightAffected;
 uniform vec3 ColorToPass;
 void main(){
 	gPosition = FragPos;
 	gNormal = normalize(Normal);
 	gAlbedoSpec = vec4(1);
-
+	ggPosition = FFragPos;
+	ggNormal = normalize(FNormal);
 	if(lightAffected == 0){
 		gNormal= vec3(-1);
 		gAlbedoSpec = vec4(ColorToPass,1.0);
