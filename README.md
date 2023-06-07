@@ -29,8 +29,9 @@ Only rendering SSAO
 
 ![SSAO only](Screenshots/ssao.png)
 
-SSAO on final render
+Final render with and without SSAO
 
+![SSAO final render](Screenshots/no-ssao_final-render.png)
 ![SSAO final render](Screenshots/ssao_final-render.png)
 
 Shader used: [SSAO shader](Engine/WorkingDir/quad.glsl)
