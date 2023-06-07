@@ -13,6 +13,8 @@ This project is a Graphics Engine made in OpenGL, GLSL and C++. It implements va
 - Right click while moving camera to rotate the camera.
 - Left click while moving camera to orbit around (0, 0, 0).
 
+- Change the Final Render to show the normal scene, and the scene with SSAO 
+![SSAO Render](Screenshots/render_mode.png)
 ## Techniques
 
 ### Deferred Shading
